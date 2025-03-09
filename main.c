@@ -162,13 +162,6 @@ int main(int argc, char** argv) {
         exit(1);
     }
 
-
-    printf("signature: ");
-    for (int i = 0; i < PNG_SIG_SIZE; i++) {
-        printf("%02X ", signature[i]);
-    }
-    printf("\n");
-
     while (1) {
         uint32_t chunk_len;
         read_bytes(&chunk_len, sizeof(chunk_len), img_file);
@@ -186,11 +179,6 @@ int main(int argc, char** argv) {
         uint32_t chunk_crc;
         read_bytes(&chunk_crc, sizeof(chunk_crc), img_file);
         write_bytes(&chunk_crc, sizeof(chunk_crc), out_file);
-
-        printf("--------------------------\n");
-        printf("chunk length : %u\n", chunk_len);
-        printf("chunk type   : %.*s\n", (int)sizeof(chunk_type), chunk_type);
-        printf("chunk CRC    : 0x%08X\n", chunk_crc);
 
         if (strncmp((char*)chunk_type, "IEND", 4) == 0) {
             break;
