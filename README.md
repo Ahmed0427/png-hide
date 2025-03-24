@@ -1,9 +1,6 @@
+# png-hide
 
-# PNG Data Injector
-
-## Description
-
-This C program allows you to inject custom data into a PNG file by adding a custom chunk. It takes in a PNG file and a data file, and outputs a modified PNG with the injected data.
+This C program allows you to inject custom data into a PNG file by adding a custom chunk. It takes in a PNG file and a data file, and outputs a modified PNG with the injected data and extract it when you ever you need.
 
 
 ## Compilation
@@ -27,15 +24,23 @@ The program expects two arguments:
 ./program <file.png> <data_file>
 ```
 
-### Example
+### Inject Example
 
 Inject data from `data.txt` into `test.png`:
 
 ```bash
 ./program test.png data.txt
 ```
-
 The modified PNG file will be saved as `out.png`.
+
+### Extract Example
+
+Extract data from `test.png`:
+
+```bash
+./program test.png
+```
+The Extracted data file will be written to `stdout`.
 
 ## Notes
 
@@ -45,3 +50,7 @@ The modified PNG file will be saved as `out.png`.
 ## License
 
 This project is open source — feel free to modify and share!
+
+## Resources
+
+[PNG specification](http://www.libpng.org/pub/png/spec/1.2/PNG-Contents.html)

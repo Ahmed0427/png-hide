@@ -75,7 +75,7 @@ void write_bytes(void* buffer, size_t buffer_size, FILE* file) {
     } 
 }
 
-bool valid_signature(uint8_t* signature) {
+bool is_valid_signature(uint8_t* signature) {
     for (int i = 0; i < PNG_SIG_SIZE; i++) {
         if (signature[i] != PNG_SIG[i]) {
             fprintf(stderr, "ERROR: this file is not a PNG image\n");
@@ -123,6 +123,7 @@ void inject_data(FILE* data_file, FILE* out_file, FILE* img_file) {
 
     uint8_t data[data_size];
     read_bytes(data, data_size, data_file);
+
     xor_cipher(data, data_size);
     write_bytes(data, data_size, out_file);
 
@@ -130,21 +131,14 @@ void inject_data(FILE* data_file, FILE* out_file, FILE* img_file) {
     write_bytes(&chunk_crc, sizeof(chunk_crc), out_file);
 }
 
-int main(int argc, char** argv) {
-    if (argc != 3) {
-        fprintf(stderr, "Usage: %s <file.png> <data_file>\n", argv[0]);
-        exit(1);
-    }
-
-
+void injector(char** argv) {
     FILE* out_file = fopen("out.png", "wb");
     FILE* img_file = fopen(argv[1], "rb");
     FILE* data_file = fopen(argv[2], "rb");
 
 
     if (!img_file || !data_file || !out_file) {
-        fprintf(stderr, "ERROR: could not open file %s: %s\n", argv[1], 
-                strerror(errno));
+        fprintf(stderr, "ERROR: could not open files\n");
 
         if (img_file) fclose(img_file);
         if (data_file) fclose(data_file);
@@ -155,7 +149,7 @@ int main(int argc, char** argv) {
     uint8_t signature[PNG_SIG_SIZE] = {0};
     read_bytes(signature, PNG_SIG_SIZE, img_file);
     write_bytes(signature, PNG_SIG_SIZE, out_file);
-    if (!valid_signature(signature)) {
+    if (!is_valid_signature(signature)) {
         fclose(img_file);
         fclose(data_file);
         fclose(out_file);
@@ -190,5 +184,77 @@ int main(int argc, char** argv) {
     fclose(img_file);
     fclose(data_file);
     fclose(out_file);
+}
+
+void extractor(char** argv) {
+    FILE* img_file = fopen(argv[1], "rb");
+
+    if (!img_file) {
+        fprintf(stderr, "ERROR: could not open img file %s\n", argv[1]);
+        exit(1);
+    }
+    
+    uint8_t signature[PNG_SIG_SIZE] = {0};
+    read_bytes(signature, PNG_SIG_SIZE, img_file);
+    if (!is_valid_signature(signature)) {
+        fclose(img_file);
+        exit(1);
+    }
+
+    while (1) {
+        uint32_t chunk_len;
+        read_bytes(&chunk_len, sizeof(chunk_len), img_file);
+        reverse_bytes(&chunk_len, sizeof(chunk_len));
+
+        uint8_t chunk_type[4];
+        read_bytes(chunk_type, sizeof(chunk_type), img_file);
+
+        uint8_t chunk_data[chunk_len];
+        read_bytes(chunk_data, chunk_len, img_file);
+
+        uint32_t chunk_crc;
+        read_bytes(&chunk_crc, sizeof(chunk_crc), img_file);
+
+        if (strncmp((char*)chunk_type, "IEND", 4) == 0) {
+            break;
+        }
+    }
+
+
+    uint32_t chunk_len;
+    size_t read_size = fread(&chunk_len, 1, sizeof(chunk_len), img_file);
+    if (read_size != sizeof(chunk_len)) {
+        fprintf(stderr, "No hidden data in this image\n");
+        exit(1);
+    } 
+    reverse_bytes(&chunk_len, sizeof(chunk_len));
+
+    uint8_t chunk_type[4];
+    read_bytes(chunk_type, sizeof(chunk_type), img_file);
+
+    uint8_t chunk_data[chunk_len];
+    read_bytes(chunk_data, chunk_len, img_file);
+
+    uint32_t chunk_crc;
+    read_bytes(&chunk_crc, sizeof(chunk_crc), img_file);
+
+    xor_cipher(chunk_data, chunk_len);
+    printf("%.*s\n", chunk_len, (char*)chunk_data);
+
+    fclose(img_file);
+}
+
+int main(int argc, char** argv) {
+    if (argc == 3) {
+        injector(argv);
+    }
+    else if (argc == 2) {
+        extractor(argv);
+    }
+    else {
+        fprintf(stderr, "Usage: %s <file.png> <data_file>\n", argv[0]);
+        exit(1);
+    }
+
     return 0;
 }
