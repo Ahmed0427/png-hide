@@ -1,6 +1,6 @@
 # png-hide
 
-This C program allows you to inject custom data into a PNG file by adding a custom chunk. It takes in a PNG file and a data file, and outputs a modified PNG with the injected data and extract it when you ever you need.
+This C program allows you to inject custom data into a PNG file by adding a custom chunk. It takes in a PNG file and a data file, and outputs a modified PNG with the injected data and extract it when ever you need.
 
 
 ## Compilation
